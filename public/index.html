@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOGISTICA · LEGALL · PERU TECNICOS · SALUTIA</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ═══ TOAST ═══ -->
+<div id="toast" style="display:none"></div>
+
+<!-- ═══ CALENDARIO ═══ -->
+<div class="cal-overlay" id="cal-overlay" onclick="cerrarCal(event)">
+  <div class="cal-box" id="cal-box">
+    <div class="cal-nav-row">
+      <button class="cal-nav" onclick="calNav(-1)">◀</button>
+      <span class="cal-label" id="cal-label"></span>
+      <button class="cal-nav" onclick="calNav(1)">▶</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <button class="cal-today-btn" onclick="calHoy()">Hoy</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL EVIDENCIAS ORDEN (para ENTRADA) ═══ -->
+<div class="modal-bg" id="modal-ev-orden">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-ev-orden-titulo">📎 Adjuntar documentos</div>
+      <button class="modal-close" onclick="document.getElementById('modal-ev-orden').classList.remove('open')">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px" id="modal-ev-orden-sub"></div>
+    <div id="modal-ev-orden-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
+    <div class="ev-area" id="modal-ev-orden-area" onclick="$('modal-ev-orden-input').click()"
+         ondragover="event.preventDefault()" ondrop="onDropEvOrden(event)">
+      <div class="ev-placeholder"><div>📎</div><div style="font-size:12px">Clic o arrastra — Boleta, Factura, Guía de remisión, PDF, Imagen</div></div>
+    </div>
+    <input type="file" id="modal-ev-orden-input" multiple accept="image/*,.pdf" style="display:none" onchange="onEvOrdenChange(event)">
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="guardarEvOrden()">✅ Guardar documentos</button>
+      <button class="btn" onclick="document.getElementById('modal-ev-orden').classList.remove('open')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL EVIDENCIAS ═══ -->
+<div class="modal-bg" id="modal-ev">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-ev-titulo">Evidencias</div>
+      <button class="modal-close" onclick="cerrarModalEv()">✕</button>
+    </div>
+    <div id="modal-ev-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
+    <div class="ev-area" id="modal-ev-area" style="margin-bottom:12px" onclick="document.getElementById('modal-ev-input').click()" ondragover="event.preventDefault()" ondrop="onDropEvModal(event)">
+      <div class="ev-placeholder"><div>📎</div><div>Clic o arrastra para agregar</div></div>
+    </div>
+    <input type="file" id="modal-ev-input" multiple accept="image/*,.pdf" style="display:none" onchange="onModalEvChange(event)">
+    <button class="btn btn-p" onclick="guardarEvModal()">✅ Guardar evidencias</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL LIMPIAR DUPLICADOS ═══ -->
+<div class="modal-bg" id="modal-dup">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-hdr">
+      <div class="modal-title">🧹 Limpiar Duplicados</div>
+      <button class="modal-close" onclick="document.getElementById('modal-dup').classList.remove('open')">✕</button>
+    </div>
+    <div id="dup-info" style="margin-bottom:14px;font-size:13px;line-height:1.7"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-r" id="btn-dup-accion" onclick="ejecutarLimpiezaDup()">🗑 Eliminar duplicados</button>
+      <button class="btn" onclick="document.getElementById('modal-dup').classList.remove('open')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL USUARIOS ═══ -->
+<div class="modal-bg" id="modal-users">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">👥 Gestionar Usuarios</div>
+      <button class="modal-close" onclick="document.getElementById('modal-users').classList.remove('open')">✕</button>
+    </div>
+    <div id="users-list" style="margin-bottom:16px"></div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:10px">➕ Nuevo usuario</div>
+      <div class="fgrid" style="margin-bottom:10px">
+        <div class="fg"><label>Usuario</label><input type="text" id="nu-user" placeholder="nombre"></div>
+        <div class="fg"><label>Contraseña</label><input type="password" id="nu-pass" placeholder="contraseña"></div>
+        <div class="fg"><label>Nombre completo</label><input type="text" id="nu-nombre" placeholder="Nombre"></div>
+        <div class="fg"><label>Correo electrónico</label><input type="email" id="nu-email" placeholder="correo@outlook.com"></div>
+        <div class="fg"><label>Rol</label>
+          <select id="nu-rol">
+            <option value="admin">Admin — todo</option>
+            <option value="operativo">Operativo — registrar</option>
+            <option value="consulta">Consulta — solo ver</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="agregarUsuario()">Agregar usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div style="text-align:center;font-size:36px;margin-bottom:10px">📦</div>
+    <div class="login-titulo">LOGISTICA · LEGALL<br>PERU TECNICOS · SALUTIA</div>
+    <div class="login-sub">Sistema de Control de Inventario</div>
+    <div class="lf">
+      <label>Usuario</label>
+      <input type="text" id="l-user" placeholder="Ingresa tu usuario" onkeydown="if(event.key==='Enter')document.getElementById('l-pass').focus()">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="Ingresa tu contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn" onclick="doLogin()">INGRESAR →</button>
+      <div style="text-align:center;margin-top:12px">
+        <a onclick="mostrarRecuperacion()" style="color:#1f6feb;font-size:12px;cursor:pointer;text-decoration:underline">¿Olvidaste tu contraseña?</a>
+      </div>
+    </div>
+    <div class="login-err" id="l-err"></div>
+    <!-- Panel recuperación -->
+    <div id="panel-recuperacion" style="display:none;margin-top:12px">
+      <div class="lf">
+        <label>Ingresa tu correo registrado</label>
+        <input type="email" id="recup-email" placeholder="correo@outlook.com">
+        <button class="login-btn" onclick="solicitarReset()" style="background:#238636">📧 Enviar link de recuperación</button>
+        <div id="recup-msg" style="font-size:12px;text-align:center;margin-top:8px"></div>
+        <div style="text-align:center;margin-top:8px">
+          <a onclick="ocultarRecuperacion()" style="color:#8b949e;font-size:12px;cursor:pointer">← Volver al login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app" style="display:none">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">📦 <span>LOGÍSTICA</span> · INVENTARIO</div>
+    <div class="hbts">
+      <button class="btn btn-w" onclick="exportarExcel()">📊 Excel</button>
+      <button class="btn" onclick="exportarJSON()">⬇ Backup</button>
+      <button class="btn" onclick="$('importJSON').click()">⬆ Restaurar</button>
+      <button class="btn" onclick="resetearDatos()" style="border-color:#dc2626;color:#f85149;font-size:11px" title="Limpia caché del navegador y recarga los 34 registros base">🔄 Reset datos</button>
+      <input type="file" id="importJSON" accept=".json" style="display:none" onchange="importarJSON(event)">
+      <button class="btn btn-g" onclick="$('importXLS').click()">📥 Plantilla</button>
+      <input type="file" id="importXLS" accept=".xlsx,.xls" style="display:none" onchange="importarPlantilla(event)">
+      <div style="position:relative">
+        <div class="user-btn" onclick="togglePanel()">
+          👤 <span id="user-label">Admin</span> ▾
+        </div>
+        <div class="user-panel" id="user-panel">
+          <div class="up-section">Sesión activa</div>
+          <div class="up-info" id="panel-info"></div>
+          <hr class="up-sep">
+          <div class="up-section">Tema</div>
+          <div class="tema-row on" id="t-oscuro" onclick="setTema('oscuro')"><div class="tema-dot" style="background:#0d1117;border:1px solid #555"></div>Oscuro</div>
+          <div class="tema-row" id="t-claro"  onclick="setTema('claro')"><div class="tema-dot"  style="background:#f5f7fa;border:1px solid #ccc"></div>Claro</div>
+          <div class="tema-row" id="t-azul"   onclick="setTema('azul')"><div class="tema-dot"   style="background:#081428;border:1px solid #4d9fff"></div>Azul</div>
+          <div class="tema-row" id="t-verde"  onclick="setTema('verde')"><div class="tema-dot"  style="background:#071510;border:1px solid #2ea043"></div>Verde</div>
+          <hr class="up-sep">
+          <div class="tema-row" id="btn-gestionar" onclick="abrirUsuarios()">👥 Gestionar usuarios</div>
+          <div class="tema-row" id="btn-limpiar-dup" onclick="abrirLimpiarDuplicados()" style="color:var(--orange)">🧹 Limpiar duplicados</div>
+          <div class="logout-row" onclick="doLogout()">🚪 Cerrar sesión</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab on" onclick="tab(this,'movimientos')">📋 Movimientos</div>
+    <div class="tab" onclick="tab(this,'stock')">📦 Stock</div>
+    <div class="tab" onclick="tab(this,'dashboard')">📊 Dashboard</div>
+    <div class="tab" onclick="tab(this,'asesores')">👥 Asesores</div>
+    <div class="tab" onclick="tab(this,'catalogos')">⚙️ Catálogos</div>
+    <div class="tab" onclick="tab(this,'productos')">💰 Productos</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ══════════ MOVIMIENTOS ══════════ -->
+    <div id="sec-movimientos" class="sec on">
+
+      <!-- Banners de alertas de stock -->
+      <div id="alertas-stock"></div>
+
+      <!-- Carrito activo -->
+      <div id="carrito-card" style="display:none" class="carrito-card">
+        <div class="carrito-header">
+          <div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px">
+              🛒 ORDEN EN CURSO — <span id="c-orden" style="color:var(--accent2)"></span>
+            </div>
+            <div style="font-size:12px;color:var(--text2)">
+              <span id="c-persona"></span> &nbsp;·&nbsp; <span id="c-fecha"></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-p" onclick="guardarCarrito()">✅ Guardar orden completa</button>
+            <button class="btn btn-r" onclick="cancelarCarrito()">✕ Cancelar</button>
+          </div>
+        </div>
+        <div id="c-items"></div>
+        <div class="carrito-total-row">
+          <span style="font-size:13px;color:var(--text2)">Total:</span>
+          <span id="c-total" style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent2)">S/ 0.00</span>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <div class="card" id="form-card">
+        <div class="card-title">➕ <span id="form-titulo">Nueva Orden</span></div>
+        <div class="fgrid">
+          <div class="fg">
+            <label>Fecha</label>
+            <input type="text" id="f-fecha" placeholder="DD/MM/AAAA" readonly style="cursor:pointer" onclick="abrirCal(this)">
+          </div>
+          <div class="fg">
+            <label>Tipo</label>
+            <select id="f-tipo" onchange="onTipoChange()">
+              <option value="">-- Selecciona --</option>
+              <option value="ENTRADA">🟢 ENTRADA</option>
+              <option value="SALIDA">🔴 SALIDA</option>
+              <option value="DEVUELTO">🟡 DEVUELTO</option>
+            </select>
+          </div>
+          <div class="fg" id="grp-prov">
+            <label>Proveedor</label>
+            <input type="text" id="f-proveedor" placeholder="Quien entrega" list="dl-proveedores">
+            <datalist id="dl-proveedores"></datalist>
+          </div>
+          <div class="fg" id="grp-persona">
+            <label>Recibido por</label>
+            <input type="text" id="f-persona" placeholder="Nombre del asesor" list="dl-personas" oninput="onPersonaInput()" onchange="onPersonaInput()">
+            <datalist id="dl-personas"></datalist>
+          </div>
+          <div class="fg">
+            <label>Área / Sede <small style="color:var(--accent2)">(auto)</small></label>
+            <input type="text" id="f-area" placeholder="Se rellena automático" readonly>
+          </div>
+          <div class="fg">
+            <label>N° Orden</label>
+            <div class="orden-disp" id="f-orden">— completa fecha y tipo —</div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">📦 Ítem a agregar</div>
+          <div class="fgrid">
+            <div class="fg">
+              <label>Categoría</label>
+              <select id="f-cat" onchange="onCatChange()">
+                <option value="">-- Selecciona --</option>
+                <option>UNIFORMES</option>
+                <option>EPP / SEGURIDAD</option>
+                <option>TELÉFONO MÓVIL</option>
+                <option>MINIGRABADORAS</option>
+                <option>LAPTOPS / TABLETS</option>
+                <option>ARTÍCULOS LIMPIEZA</option>
+                <option>ARTÍCULOS MOTOS</option>
+                <option>ÚTILES OFICINA</option>
+              </select>
+            </div>
+            <div class="fg wide">
+              <label>Producto</label>
+              <input type="text" id="f-producto" placeholder="Ej: Polo manga larga" list="dl-productos" oninput="onProductoInput()">
+              <datalist id="dl-productos"></datalist>
+            </div>
+            <div class="fg">
+              <label>Modelo / Marca</label>
+              <input type="text" id="f-modelo" placeholder="Ej: Piqué, Samsung..." list="dl-modelos">
+            <datalist id="dl-modelos"></datalist>
+            </div>
+            <div class="fg">
+              <label>Talla</label>
+              <select id="f-talla">
+                <option value="—">— No aplica —</option>
+                <option>XS</option><option>S</option><option>M</option>
+                <option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+                <option>28</option><option>30</option><option>32</option>
+                <option>34</option><option>36</option><option>38</option><option>40</option><option>42</option>
+                <option>U</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Código / IMEI / Serie</label>
+              <input type="text" id="f-codigo" placeholder="Solo tecnología">
+            </div>
+            <div class="fg">
+              <label>Cantidad</label>
+              <input type="number" id="f-cantidad" min="1" value="1">
+            </div>
+            <div class="fg">
+              <label>Precio Unit. (S/)</label>
+              <input type="number" id="f-precio" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="fg">
+              <label>Estado</label>
+              <select id="f-estado">
+                <option>NUEVO</option>
+                <option>U.(Depreciado)</option>
+                <option>DAÑADO</option>
+              </select>
+            </div>
+            <div class="fg wide">
+              <label>Observaciones del ítem</label>
+              <input type="text" id="f-obs" placeholder="Notas adicionales">
+            </div>
+            <div class="fg wide">
+              <label>📎 Evidencia (cargo, factura, foto)</label>
+              <div class="ev-area" id="ev-area" onclick="$('ev-input').click()" ondragover="event.preventDefault()" ondrop="onDropEv(event)">
+                <div class="ev-placeholder" id="ev-ph">
+                  <div>📎</div>
+                  <div style="font-size:12px">Clic para adjuntar o arrastra aquí · Imágenes, PDF</div>
+                </div>
+                <div class="ev-thumb" id="ev-thumbs" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+              </div>
+              <input type="file" id="ev-input" multiple accept="image/*,.pdf" style="display:none" onchange="onEvChange(event)">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-p" onclick="agregarItem()">➕ Agregar a la orden</button>
+          <button class="btn" onclick="limpiarItem()">🗑 Limpiar ítem</button>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filters">
+        <input type="text" id="busq" placeholder="🔍 Buscar producto, persona, orden..." oninput="renderTabla()">
+        <select onchange="renderTabla()" id="fil-tipo"><option value="">Todos los tipos</option><option>ENTRADA</option><option>SALIDA</option><option>DEVUELTO</option></select>
+        <select onchange="renderTabla()" id="fil-cat"><option value="">Todas las categorías</option><option>UNIFORMES</option><option>EPP / SEGURIDAD</option><option>TELÉFONO MÓVIL</option><option>MINIGRABADORAS</option><option>LAPTOPS / TABLETS</option><option>ARTÍCULOS LIMPIEZA</option><option>ARTÍCULOS MOTOS</option><option>ÚTILES OFICINA</option></select>
+          <select onchange="renderTabla()" id="fil-tipo-prod" title="Filtrar por tipo de producto"><option value="">Todos los tipos</option></select>
+        <select onchange="renderTabla()" id="fil-mes"><option value="">Todos los meses</option></select>
+        <span id="conteo-mov" style="font-size:12px;color:var(--text2);margin-left:auto"></span>
+      </div>
+
+      <!-- Tabla -->
+      <div class="tbwrap">
+        <div class="tb-head">
+          <span class="tb-title">REGISTROS</span>
+          <button class="btn" onclick="exportarCSV()" style="font-size:11px;padding:4px 10px">📊 CSV</button>
+        </div>
+        <div class="tb-scroll">
+          <table>
+            <thead><tr>
+              <th>Orden</th><th>Tipo</th><th>Fecha</th>
+              <th>Persona / Proveedor</th><th>Área</th>
+              <th>Total</th><th>Ítems</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="tbody-mov"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ STOCK ══════════ -->
+    <div id="sec-stock" class="sec">
+      <div class="sec-title">📦 Stock Actual por Producto</div>
+      <div class="filters" style="margin-bottom:16px">
+        <select onchange="renderStock()" id="s-cat"><option value="">Todas las categorías</option><option>UNIFORMES</option><option>EPP / SEGURIDAD</option><option>TELÉFONO MÓVIL</option><option>MINIGRABADORAS</option><option>LAPTOPS / TABLETS</option><option>ARTÍCULOS LIMPIEZA</option><option>ARTÍCULOS MOTOS</option><option>ÚTILES OFICINA</option></select>
+        <select onchange="renderStock()" id="s-tipo" title="Filtrar por tipo de producto"><option value="">Todos los tipos</option></select>
+        <select onchange="renderStock()" id="s-alerta"><option value="">Todos</option><option value="agotado">🔴 Agotados</option><option value="bajo">🟡 Stock bajo</option><option value="ok">🟢 OK</option></select>
+      </div>
+      <div class="stock-grid" id="stock-grid"></div>
+    </div>
+
+    <!-- ══════════ DASHBOARD ══════════ -->
+    <div id="sec-dashboard" class="sec">
+      <div class="sec-title">📊 Dashboard · Indicadores de Logística</div>
+
+      <!-- KPIs -->
+      <div id="kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px"></div>
+
+      <!-- Fila 1: Curva gasto mensual + barras verticales gasto mensual -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">📈 Curva de Gasto Mensual (S/)</div>
+          <div id="chart-mes-curva" style="overflow-x:auto"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">📊 Gasto Mensual — Barras (S/)</div>
+          <div id="chart-mes-bars"></div>
+        </div>
+      </div>
+
+      <!-- Fila 2: Curva entradas + dona categorías -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">📈 Curva de Entradas por Mes (unid.)</div>
+          <div id="chart-ent-curva" style="overflow-x:auto"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">🍩 Distribución por Categoría</div>
+          <div id="chart-dona-cat"></div>
+        </div>
+      </div>
+
+      <!-- Fila 3: Barras horiz categorías + barras vert categorías -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">💰 Gasto por Categoría — Horizontal (S/)</div>
+          <div id="chart-cat"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">📊 Gasto por Categoría — Vertical (S/)</div>
+          <div id="chart-cat-vert"></div>
+        </div>
+      </div>
+
+      <!-- Fila 4: Top productos + tallas verticales -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">📦 Top Productos Salidas (unidades)</div>
+          <div id="chart-prod"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">👕 Tallas Más Demandadas (unidades)</div>
+          <div id="chart-tallas"></div>
+        </div>
+      </div>
+
+      <!-- Fila 5: Empresa dona + empresa vertical -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">🏢 Distribución por Empresa</div>
+          <div id="chart-dona-empresa"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">📊 Gasto por Empresa — Barras (S/)</div>
+          <div id="chart-emp-vert"></div>
+        </div>
+      </div>
+
+      <!-- Fila 6: Provincia + stock muerto -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">📍 Gasto por Provincia — Top 10 (S/)</div>
+          <div id="chart-provincia"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">⚰️ Stock Muerto <small style="font-weight:400;color:var(--text2)">(sin salida +60 días)</small></div>
+          <div id="chart-stock-muerto"></div>
+        </div>
+      </div>
+
+      <!-- Fila 7: Top asesores horiz + vertical -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="chart-wrap">
+          <div class="chart-title">💼 Top Asesores — Valor Recibido (S/)</div>
+          <div id="chart-valor-asesor"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">📊 Top Asesores — Barras Verticales</div>
+          <div id="chart-asesor-vert"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PRODUCTOS ══════════ -->
+    <div id="sec-productos" class="sec">
+      <div class="sec-title">💰 Catálogo de Productos y Precios</div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end">
+        <div class="fg" style="flex:1;min-width:180px">
+          <label>Categoría</label>
+          <select id="pp-cat" onchange="renderProductos()">
+            <option value="">Todas</option>
+            <option>UNIFORMES</option>
+            <option>EPP / SEGURIDAD</option>
+            <option>TELÉFONO MÓVIL</option>
+            <option>MINIGRABADORAS</option>
+            <option>LAPTOPS / TABLETS</option>
+            <option>ARTÍCULOS LIMPIEZA</option>
+            <option>ARTÍCULOS MOTOS</option>
+            <option>ÚTILES OFICINA</option>
+          </select>
+        </div>
+        <button class="btn btn-p" onclick="abrirModalProducto(null)" style="height:36px">➕ Nuevo producto</button>
+      </div>
+      <div id="productos-tabla"></div>
+    </div>
+
+    <!-- Modal producto -->
+    <div id="modal-producto" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;display:none;align-items:center;justify-content:center">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;width:420px;max-width:95vw">
+        <div style="font-weight:700;font-size:15px;margin-bottom:16px">📦 Producto / Precio</div>
+        <input type="hidden" id="pp-idx">
+        <div class="fg" style="margin-bottom:10px">
+          <label>Categoría *</label>
+          <select id="pp-m-cat">
+            <option>UNIFORMES</option>
+            <option>EPP / SEGURIDAD</option>
+            <option>TELÉFONO MÓVIL</option>
+            <option>MINIGRABADORAS</option>
+            <option>LAPTOPS / TABLETS</option>
+            <option>ARTÍCULOS LIMPIEZA</option>
+            <option>ARTÍCULOS MOTOS</option>
+            <option>ÚTILES OFICINA</option>
+          </select>
+        </div>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Producto *</label>
+          <input type="text" id="pp-m-prod" placeholder="Nombre del producto" list="dl-productos">
+        </div>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Modelo / Marca</label>
+          <input type="text" id="pp-m-modelo" placeholder="Ej: Piqué, Samsung..." list="dl-modelos">
+        </div>
+        <div class="fg" style="margin-bottom:16px">
+          <label>Precio unitario (S/) *</label>
+          <input type="number" id="pp-m-precio" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="cerrarModalProducto()">Cancelar</button>
+          <button class="btn btn-p" onclick="guardarProducto()">💾 Guardar</button>
+        </div>
+      </div>
+    </div>
+
+<!-- ══════════ ASESORES ══════════ -->
+    <div id="sec-asesores" class="sec">
+      <div class="sec-title">👥 Catálogo de Asesores / Personas</div>
+
+      <div class="card" id="card-asesor">
+        <div class="card-title">✏️ <span id="asesor-form-titulo">Agregar Persona</span></div>
+        <div class="fgrid">
+          <div class="fg"><label>Nombres</label><input type="text" id="a-nombres" placeholder="Ej: CARLOS ALBERTO"></div>
+          <div class="fg"><label>Apellidos</label><input type="text" id="a-apellidos" placeholder="Ej: RÍOS VERA"></div>
+          <div class="fg"><label>DNI</label><input type="text" id="a-dni" placeholder="12345678" maxlength="8"></div>
+          <div class="fg"><label>Empresa</label>
+            <select id="a-empresa">
+              <option value="">-- Selecciona --</option>
+              <option>PERU TECNICOS</option>
+              <option>SALUTIA</option>
+              <option>LEGALL</option>
+              <option>Otra</option>
+            </select>
+          </div>
+          <div class="fg"><label>Jefe inmediato</label><input type="text" id="a-jefe" placeholder="Nombre del jefe"></div>
+          <div class="fg"><label>Área / Cargo</label>
+            <select id="a-area">
+              <option value="">-- Selecciona --</option>
+              <option value="LIMA">LIMA</option>
+              <option value="PROVINCIA">PROVINCIA</option>
+            </select>
+          </div>
+          <div class="fg"><label>Provincia / Ciudad</label>
+            <select id="a-provincia">
+              <option value="">-- Selecciona --</option>
+              <option>LIMA</option><option>AREQUIPA</option><option>CUSCO</option>
+              <option>TRUJILLO</option><option>CHICLAYO</option><option>PIURA</option>
+              <option>IQUITOS</option><option>HUANCAYO</option><option>TACNA</option>
+              <option>PUNO</option><option>CAJAMARCA</option><option>ICA</option>
+              <option>CHIMBOTE</option><option>HUARAZ</option><option>HUANUCO</option>
+              <option>CAÑETE</option><option>Otra</option>
+            </select>
+          </div>
+          <div class="fg"><label>Móvil asignado</label><input type="text" id="a-movil" placeholder="Ej: Samsung A54 · 987654321"></div>
+        </div>
+        <input type="hidden" id="a-edit-id">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn btn-p" onclick="guardarAsesor()">✅ Guardar</button>
+          <button class="btn" onclick="limpiarAsesor()">🗑 Limpiar</button>
+          <button class="btn btn-w" onclick="exportarPlantillaAsesores()" style="margin-left:auto">📋 Plantilla Excel</button>
+          <button class="btn btn-g" onclick="$('imp-asesores').click()">📥 Importar Excel</button>
+          <input type="file" id="imp-asesores" accept=".xlsx,.xls" style="display:none" onchange="importarAsesores(event)">
+        </div>
+      </div>
+
+      <div class="filters">
+        <input type="text" id="busq-a" placeholder="🔍 Buscar nombre, DNI, empresa..." oninput="renderAsesores()">
+        <select id="fil-emp" onchange="renderAsesores()"><option value="">Todas las empresas</option><option>PERU TECNICOS</option><option>LEGALL</option><option>SALUTIA</option></select>
+        <select id="fil-prov-a" onchange="renderAsesores()"><option value="">Todas las provincias</option><option>LIMA</option><option>AREQUIPA</option><option>CUSCO</option><option>TRUJILLO</option><option>CHICLAYO</option><option>PIURA</option><option>HUANCAYO</option></select>
+        <span id="conteo-a" style="font-size:12px;color:var(--text2);margin-left:auto"></span>
+      </div>
+
+      <div class="tbwrap">
+        <div class="tb-scroll">
+          <table class="tab-asesores">
+            <thead><tr>
+              <th>N°</th><th>Nombres</th><th>Apellidos</th><th>DNI</th>
+              <th>Empresa</th><th>Área</th><th>Provincia</th>
+              <th>Jefe</th><th>Móvil</th><th></th>
+            </tr></thead>
+            <tbody id="tbody-asesores"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ CATÁLOGOS ══════════ -->
+    <div id="sec-catalogos" class="sec">
+      <div class="sec-title">⚙️ Catálogos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="card cat-section">
+          <div class="cat-title" style="margin-bottom:10px;font-weight:700">🏭 Proveedores</div>
+          <div class="cat-list" id="cat-proveedores"></div>
+          <div class="cat-add">
+            <input type="text" id="add-prov" placeholder="Nuevo proveedor">
+            <button class="btn btn-p" onclick="addCat('proveedores','add-prov','cat-proveedores')">+</button>
+          </div>
+        </div>
+        <div class="card cat-section">
+          <div class="cat-title" style="margin-bottom:10px;font-weight:700">📍 Áreas/Sedes</div>
+          <div class="cat-list" id="cat-areas"></div>
+          <div class="cat-add">
+            <input type="text" id="add-area" placeholder="Nueva área">
+            <button class="btn btn-p" onclick="addCat('areas','add-area','cat-areas')">+</button>
+          </div>
+        </div>
+        <div class="card cat-section">
+          <div class="cat-title" style="margin-bottom:10px;font-weight:700">📦 Productos frecuentes</div>
+          <div class="cat-list" id="cat-productos"></div>
+          <div class="cat-add">
+            <input type="text" id="add-prod" placeholder="Nuevo producto">
+            <button class="btn btn-p" onclick="addCat('productos','add-prod','cat-productos')">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script src="app.js"></script>
+</body>
+</html>
