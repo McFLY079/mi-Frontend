@@ -159,7 +159,12 @@ async function doLogin() {
   const p = $('l-pass').value;
   if (!u || !p) { $('l-err').textContent = 'Ingresa usuario y contraseña'; return; }
   try {
-    const found = await apiFetch('/usuarios/login', { method:'POST', body: JSON.stringify({ usuario:u, pass:p }) });
+    const found = await fetch("mi-frontend-psi.vercel.app", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ usuario, contrasena })
+});
+    
     sesion = found;
     localStorage.setItem('sesion_activa', JSON.stringify(found));
     aplicarPermisosPorRol();
